@@ -1,7 +1,7 @@
 model = dict(
     type='RecognizerGCN',
     backbone=dict(
-        type='STGCN',
+        type='mySTGCN',
         graph_cfg=dict(layout='coco', mode='stgcn_spatial')),
     cls_head=dict(type='GCNHead', num_classes=60, in_channels=256))
 
@@ -35,7 +35,7 @@ test_pipeline = [
     dict(type='ToTensor', keys=['keypoint'])
 ]
 data = dict(
-    videos_per_gpu=16,
+    videos_per_gpu=8, #WAS 16
     workers_per_gpu=2,
     test_dataloader=dict(videos_per_gpu=1),
     train=dict(
@@ -51,6 +51,7 @@ optimizer_config = dict(grad_clip=None)
 # learning policy
 lr_config = dict(policy='CosineAnnealing', min_lr=0, by_epoch=False)
 total_epochs = 16
+find_unused_parameters = True
 checkpoint_config = dict(interval=1)
 evaluation = dict(interval=1, metrics=['top_k_accuracy'])
 log_config = dict(interval=100, hooks=[dict(type='TextLoggerHook')])

@@ -205,7 +205,7 @@ class X3D(nn.Module):
                  num_stages=4,
                  stage_blocks=(1, 2, 5, 3),
                  spatial_strides=(2, 2, 2, 2),
-                 frozen_stages=-1,
+                 frozen_stages=-1, # default= -1 --> max=3 #
                  se_style='half',
                  se_ratio=1 / 16,
                  use_swish=True,

@@ -55,7 +55,7 @@ test_pipeline = [
     dict(type='ToTensor', keys=['imgs'])
 ]
 data = dict(
-    videos_per_gpu=32,
+    videos_per_gpu=16, #WAS 32 (CUDA OUT OF MEM ERROR)
     workers_per_gpu=4,
     test_dataloader=dict(videos_per_gpu=1),
     train=dict(
@@ -70,6 +70,7 @@ optimizer_config = dict(grad_clip=dict(max_norm=40, norm_type=2))
 # learning policy
 lr_config = dict(policy='CosineAnnealing', by_epoch=False, min_lr=0)
 total_epochs = 24
+find_unused_parameters = True #ADDED SO I CAN FREEZE STAGES
 checkpoint_config = dict(interval=1)
 evaluation = dict(interval=1, metrics=['top_k_accuracy', 'mean_class_accuracy'], topk=(1, 5))
 log_config = dict(interval=20, hooks=[dict(type='TextLoggerHook')])
