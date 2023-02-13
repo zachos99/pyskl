@@ -57,7 +57,7 @@ class FusionRecognizer(BaseRecognizer):
     def forward_train(self, imgs, keypoint, label, **kwargs):
         """Defines the computation performed at every call when training."""
 
-        labels = label  #########################
+        labels = label
         assert self.with_cls_head
 
         # for cnn
@@ -73,10 +73,15 @@ class FusionRecognizer(BaseRecognizer):
         x_3d = self.backbone_cnn(imgs)
         x_gcn = self.backbone_gcn(keypoint)
 
-        # Which will return 3 cls_scores: ['3d', 'gcn', 'both'] ?????????
         cls_scores = self.cls_head((x_3d, x_gcn))
 
         gt_labels = labels.squeeze()
+
+        """
+                        ##########################################
+                        ########## for separate losses ##########
+                        ##########################################
+                        
         loss_components = self.cls_head.loss_components
         # Weights between 3d and gcn (default=1)
         loss_weights = self.cls_head.loss_weights
@@ -88,12 +93,23 @@ class FusionRecognizer(BaseRecognizer):
             loss_cls[f'{loss_name}_loss_cls'] *= weight
             losses.update(loss_cls)
 
+        """
+
+        loss_cls = self.cls_head.loss(cls_score, gt_label, **kwargs)
+        losses.update(loss_cls)
+
         return losses
 
     def forward_test(self, imgs, keypoint, **kwargs):
         """Defines the computation performed at every call when evaluation and
         testing."""
 
+
+
+        """
+                        ##########################################
+                        ########## for separate scores ##########
+                        ##########################################
         # for cnn
         batches = imgs.shape[0]
         num_segs = imgs.shape[1]
@@ -101,6 +117,8 @@ class FusionRecognizer(BaseRecognizer):
         # for gcn
         bs, nc = keypoint.shape[:2]
         keypoint = keypoint.reshape((bs * nc,) + keypoint.shape[2:])
+        """
+
 
         #feat extraction
         x_3d = self.backbone_cnn(imgs)
@@ -112,6 +130,11 @@ class FusionRecognizer(BaseRecognizer):
         assert self.with_cls_head
         cls_scores = self.cls_head((x_3d, x_gcn))
 
+
+        """
+                ##########################################
+                ########## for separate scores ##########
+                ##########################################
         # cnn: cls_score = cls_score.reshape(batches, num_segs, cls_score.shape[-1])
         # gcn: cls_score = cls_score.reshape(bs, nc, cls_score.shape[-1])
         cls_scores[0] = cls_scores[0].reshape(batches, num_segs, cls_scores[0].shape[-1])
@@ -120,6 +143,12 @@ class FusionRecognizer(BaseRecognizer):
         for k in cls_scores:
             cls_score = self.average_clip(cls_scores[k][None])
             cls_scores[k] = cls_score.data.cpu().numpy()[0]
+        
+        """
+
+        cls_scores = self.average_clip(cls_scores)
+        cls_scores= cls_scores.cpu().numpy()
+
 
         return [cls_scores]
 
