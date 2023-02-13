@@ -30,9 +30,11 @@ class FusionHead(BaseHead):
 
         super().__init__(num_classes, in_channels, loss_cls, **kwargs)
 
+        
         if isinstance(dropout, float):
             dropout = {'cnn': dropout, 'gcn': dropout}
         assert isinstance(dropout, dict)
+        
 
         self.dropout = dropout
         self.init_std = init_std
@@ -44,16 +46,22 @@ class FusionHead(BaseHead):
         assert len(loss_weights) == len(loss_components)
         self.loss_weights = loss_weights
 
+        """
+            ##############################################
+            ### for separate dropout and linear layers ###
+            ##############################################
+                        
         self.dropout_cnn = nn.Dropout(p=self.dropout['cnn'])
         self.dropout_gcn = nn.Dropout(p=self.dropout['gcn'])
 
         self.fc_cnn = nn.Linear(in_channels[0], num_classes)
         self.fc_gcn = nn.Linear(in_channels[1], num_classes)
+        """
 
     def init_weights(self):
         """Initiate the parameters from scratch."""
-        normal_init(self.fc_cnn, std=self.init_std)
-        normal_init(self.fc_gcn, std=self.init_std)
+        #normal_init(self.fc_cnn, std=self.init_std)
+        #normal_init(self.fc_gcn, std=self.init_std)
 
     def forward(self, x):
         """Defines the computation performed at every call.
@@ -74,7 +82,7 @@ class FusionHead(BaseHead):
             x_cnn = torch.cat(x_cnn, dim=1)
         x_cnn = pool_cnn(x_cnn)
         x_cnn = x_cnn.view(x_cnn.shape[:2])
-        #######################################
+
 
         ################# GCN #################
         pool_gcn = nn.AdaptiveAvgPool2d(1)
@@ -83,13 +91,28 @@ class FusionHead(BaseHead):
         x_gcn = pool_gcn(x_gcn)
         x_gcn = x_gcn.reshape(N, M, C)
         x_gcn = x_gcn.mean(dim=1)
-        #######################################
 
+        """
+                        ##########################################
+                        ########## for separate scores ##########
+                        ##########################################
+                                
         x_cnn = self.dropout_cnn(x_cnn)
         x_gcn = self.dropout_gcn(x_gcn)
-
         cls_scores = {}
         cls_scores['cnn'] = self.fc_cnn(x_cnn)
         cls_scores['gcn'] = self.fc_gcn(x_gcn)
+        
+        """
+
+        x = torch.cat(x_cnn,x_gcn)
+        fc_cls = nn.Linear(x.shape[0],num_classes)
+        normal_init(fc_cls, std=self.init_std)
+
+        cls_scores = fc_cls(x)
+
+
+
+
 
         return cls_scores
