@@ -95,7 +95,7 @@ class FusionRecognizer(BaseRecognizer):
 
         """
 
-        loss_cls = self.cls_head.loss(cls_score, gt_label, **kwargs)
+        loss_cls = self.cls_head.loss(cls_scores, gt_label, **kwargs)
         losses.update(loss_cls)
 
         return losses
@@ -106,10 +106,7 @@ class FusionRecognizer(BaseRecognizer):
 
 
 
-        """
-                        ##########################################
-                        ########## for separate scores ##########
-                        ##########################################
+
         # for cnn
         batches = imgs.shape[0]
         num_segs = imgs.shape[1]
@@ -117,7 +114,7 @@ class FusionRecognizer(BaseRecognizer):
         # for gcn
         bs, nc = keypoint.shape[:2]
         keypoint = keypoint.reshape((bs * nc,) + keypoint.shape[2:])
-        """
+
 
 
         #feat extraction
